@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ramadan Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero card">
+      <p class="bismillah">Bismillah</p>
+      <h1>Ramadan Kareem</h1>
+      <p class="subtitle">Sehri & Iftar Timings with Live Countdown</p>
+      <div class="location-row">
+        <button id="gpsBtn" type="button">Use My GPS Location</button>
+        <form id="searchForm" class="search-form">
+          <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" required>
+          <button type="submit">Search</button>
+        </form>
+      </div>
+      <p id="locationLabel" class="location-label">Location: Not selected</p>
+      <p id="statusText" class="status">Select location to load Ramadan timings.</p>
+    </section>
+
+    <section class="countdowns card">
+      <div class="countdown-block">
+        <h2>Sehri (Suhoor)</h2>
+        <p id="sehriTime" class="time">--:--</p>
+        <p id="sehriCountdown" class="countdown">--:--:--</p>
+      </div>
+      <div class="countdown-block">
+        <h2>Iftar (Maghrib)</h2>
+        <p id="iftarTime" class="time">--:--</p>
+        <p id="iftarCountdown" class="countdown">--:--:--</p>
+      </div>
+    </section>
+
+    <section class="calendar card">
+      <div class="calendar-head">
+        <h2 id="calendarTitle">Ramadan Calendar</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Roza</th>
+              <th>Date</th>
+              <th>Sehri</th>
+              <th>Iftar</th>
+            </tr>
+          </thead>
+          <tbody id="calendarBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
