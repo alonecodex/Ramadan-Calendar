@@ -15,14 +15,12 @@
 <body>
   <main class="page">
     <section class="hero card">
-      <p class="bismillah">Bismillah</p>
-      <h1>Ramadan Kareem</h1>
-      <p class="subtitle">Sehri & Iftar Timings with Live Countdown</p>
 
       <div class="location-row">
         <button id="gpsBtn" type="button">Use My GPS Location</button>
         <form id="searchForm" class="search-form">
-          <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" required>
+          <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" list="citySuggestions" autocomplete="off" required>
+          <datalist id="citySuggestions"></datalist>
           <button type="submit">Search</button>
         </form>
       </div>
@@ -48,7 +46,6 @@
         <label>
           Date View
           <select id="dateModeSelect">
-            <option value="both">Hijri + Gregorian</option>
             <option value="greg">Gregorian only</option>
             <option value="hijri">Hijri only</option>
           </select>
@@ -58,8 +55,6 @@
 
       <div class="action-row">
         <button id="addFavBtn" type="button">Add To Favorites</button>
-        <button id="exportCsvBtn" type="button">Download CSV</button>
-        <button id="printBtn" type="button">Print / Save PDF</button>
         <button id="notifyBtn" type="button">Enable Alerts</button>
         <button id="installBtn" type="button" class="hidden">Install App</button>
       </div>
@@ -120,11 +115,6 @@
         <p id="zakatResult">Estimated Zakat (2.5%): 0</p>
       </article>
 
-      <article class="card mosque-card">
-        <h2>Nearest Mosques</h2>
-        <button id="findMosquesBtn" type="button">Find Nearby Mosques</button>
-        <ul id="mosqueList" class="mosque-list"></ul>
-      </article>
     </section>
 
     <section class="calendar card">
@@ -150,3 +140,8 @@
   <script src="script.js"></script>
 </body>
 </html>
+
+
+
+
+

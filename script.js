@@ -1,6 +1,7 @@
 ﻿const gpsBtn = document.getElementById('gpsBtn');
 const searchForm = document.getElementById('searchForm');
 const cityInput = document.getElementById('cityInput');
+const citySuggestions = document.getElementById('citySuggestions');
 const locationLabel = document.getElementById('locationLabel');
 const timezoneLabel = document.getElementById('timezoneLabel');
 const statusText = document.getElementById('statusText');
@@ -19,8 +20,6 @@ const dateModeSelect = document.getElementById('dateModeSelect');
 const reloadBtn = document.getElementById('reloadBtn');
 const addFavBtn = document.getElementById('addFavBtn');
 const favoritesList = document.getElementById('favoritesList');
-const exportCsvBtn = document.getElementById('exportCsvBtn');
-const printBtn = document.getElementById('printBtn');
 const notifyBtn = document.getElementById('notifyBtn');
 const installBtn = document.getElementById('installBtn');
 const progressText = document.getElementById('progressText');
@@ -32,8 +31,6 @@ const fitranaInput = document.getElementById('fitranaInput');
 const zakatAmountInput = document.getElementById('zakatAmountInput');
 const fitranaResult = document.getElementById('fitranaResult');
 const zakatResult = document.getElementById('zakatResult');
-const findMosquesBtn = document.getElementById('findMosquesBtn');
-const mosqueList = document.getElementById('mosqueList');
 
 const STORAGE_KEYS = {
   settings: 'ramadan.settings',
@@ -56,7 +53,7 @@ let notifyTimer = null;
 let dailyEventEntries = [];
 let ramadanRows = [];
 let currentLocation = { label: 'Karachi, Pakistan', lat: 24.8607, lon: 67.0011 };
-let currentSettings = { method: '1', school: '1', dateMode: 'both' };
+let currentSettings = { method: '1', school: '1', dateMode: 'greg' };
 let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let deferredInstallPrompt = null;
 let notifiedMap = {};
@@ -168,10 +165,10 @@ function loadSettings() {
     currentSettings = {
       method: parsed.method || '1',
       school: parsed.school || '1',
-      dateMode: parsed.dateMode || 'both'
+      dateMode: (parsed.dateMode === 'hijri' || parsed.dateMode === 'greg') ? parsed.dateMode : 'greg'
     };
   } catch {
-    currentSettings = { method: '1', school: '1', dateMode: 'both' };
+    currentSettings = { method: '1', school: '1', dateMode: 'greg' };
   }
 
   methodSelect.value = currentSettings.method;
@@ -308,11 +305,9 @@ function clearCalendar() {
 }
 
 function getDateLabel(row) {
-  if (currentSettings.dateMode === 'greg') return row.gregDate;
   if (currentSettings.dateMode === 'hijri') return row.hijriDate;
-  return `${row.hijriDate} / ${row.gregDate}`;
+  return row.gregDate;
 }
-
 function renderCalendar(rows, todayIndex) {
   clearCalendar();
 
@@ -551,31 +546,20 @@ function scheduleNotifications() {
   }, 20000);
 }
 
-function exportCsv() {
-  if (!ramadanRows.length) return;
-
-  const lines = ['Roza,Date,Sehri,Iftar'];
-  ramadanRows.forEach((r) => {
-    lines.push(`${r.roza},"${getDateLabel(r)}",${format12Hour(r.sehri)},${format12Hour(r.iftar)}`);
-  });
-
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'ramadan-calendar.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 async function reverseGeocode(lat, lon) {
-  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
-  if (!res.ok) return `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${lat}&lon=${lon}`);
+  if (!res.ok) return `Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`;
 
   const json = await res.json();
-  const city = json.address.city || json.address.town || json.address.village || 'Unknown city';
-  const country = json.address.country || '';
-  return `${city}${country ? `, ${country}` : ''}`;
+  const a = json.address || {};
+  const primary = [a.house_number, a.road].filter(Boolean).join(' ');
+  const area = a.suburb || a.neighbourhood || a.city_district || a.town || a.village || a.city;
+  const city = a.city || a.town || a.village || a.county || '';
+  const country = a.country || '';
+
+  const exact = [primary, area, city, country].filter(Boolean);
+  if (exact.length) return exact.join(', ');
+  return json.display_name || `Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`;
 }
 
 async function geocodeCity(cityName) {
@@ -593,38 +577,42 @@ async function geocodeCity(cityName) {
   };
 }
 
-async function loadNearbyMosques() {
-  mosqueList.innerHTML = '';
-  statusText.textContent = 'Finding nearby mosques...';
+function renderCitySuggestions(items) {
+  citySuggestions.innerHTML = '';
+  suggestionItems = items;
 
-  const query = `[out:json];node["amenity"="place_of_worship"]["religion"="muslim"](around:5000,${currentLocation.lat},${currentLocation.lon});out 12;`;
-  const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
-  if (!res.ok) throw new Error('Mosque lookup failed.');
+  items.forEach((item) => {
+    const opt = document.createElement('option');
+    opt.value = item.label;
+    citySuggestions.appendChild(opt);
+  });
+}
 
-  const json = await res.json();
-  const list = (json.elements || []).slice(0, 8);
-
-  if (!list.length) {
-    mosqueList.innerHTML = '<li>No nearby mosques found.</li>';
-    statusText.textContent = 'No mosques found in 5km radius.';
+async function fetchCitySuggestions(query) {
+  if (!query || query.length < 2) {
+    renderCitySuggestions([]);
     return;
   }
 
-  list.forEach((m) => {
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    const name = (m.tags && (m.tags.name || m.tags['name:en'])) || 'Masjid';
-    a.textContent = name;
-    a.href = `https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lon}`;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    li.appendChild(a);
-    mosqueList.appendChild(li);
-  });
+  const q = encodeURIComponent(query);
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&addressdetails=1&q=${q}`);
+  if (!res.ok) return;
 
-  statusText.textContent = 'Nearby mosques loaded.';
+  const data = await res.json();
+  const items = data.map((x) => ({
+    lat: Number(x.lat),
+    lon: Number(x.lon),
+    label: x.display_name.split(',').slice(0, 3).join(', '),
+    fullLabel: x.display_name
+  }));
+
+  renderCitySuggestions(items);
 }
 
+function getSelectedSuggestion(value) {
+  const v = (value || '').trim().toLowerCase();
+  return suggestionItems.find((x) => x.label.toLowerCase() === v || x.fullLabel.toLowerCase() === v) || null;
+}
 async function loadCalendarForCoordinates(lat, lon, locationName) {
   try {
     statusText.textContent = 'Loading Ramadan timings...';
@@ -730,7 +718,14 @@ gpsBtn.addEventListener('click', () => {
     }
   }, () => {
     statusText.textContent = 'Unable to access GPS location.';
-  });
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+});
+
+cityInput.addEventListener('input', () => {
+  clearTimeout(suggestionTimer);
+  suggestionTimer = setTimeout(() => {
+    fetchCitySuggestions(cityInput.value.trim());
+  }, 250);
 });
 
 searchForm.addEventListener('submit', async (e) => {
@@ -738,8 +733,10 @@ searchForm.addEventListener('submit', async (e) => {
   try {
     const city = cityInput.value.trim();
     if (!city) return;
+
     statusText.textContent = 'Searching city...';
-    const result = await geocodeCity(city);
+    const selected = getSelectedSuggestion(city);
+    const result = selected || await geocodeCity(city);
     loadCalendarForCoordinates(result.lat, result.lon, result.label);
   } catch (err) {
     statusText.textContent = err.message;
@@ -747,8 +744,6 @@ searchForm.addEventListener('submit', async (e) => {
 });
 
 addFavBtn.addEventListener('click', addCurrentToFavorites);
-exportCsvBtn.addEventListener('click', exportCsv);
-printBtn.addEventListener('click', () => window.print());
 
 notifyBtn.addEventListener('click', async () => {
   if (!('Notification' in window)) {
@@ -769,13 +764,7 @@ notifyBtn.addEventListener('click', async () => {
   el.addEventListener('input', updateZakatUI);
 });
 
-findMosquesBtn.addEventListener('click', async () => {
-  try {
-    await loadNearbyMosques();
-  } catch (err) {
-    statusText.textContent = err.message || 'Failed to find mosques.';
-  }
-});
+
 
 function init() {
   loadSettings();
@@ -792,3 +781,17 @@ function init() {
 }
 
 init();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
