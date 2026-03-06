@@ -30,6 +30,18 @@ function stripTimezoneText(timingValue) {
   return timingValue.split(' ')[0];
 }
 
+function format12Hour(time24) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time24);
+  if (!match) return time24;
+
+  let hour = Number(match[1]);
+  const min = match[2];
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour %= 12;
+  if (hour === 0) hour = 12;
+  return `${hour}:${min} ${ampm}`;
+}
+
 function toDateFromApiGregorian(gregorianObj) {
   const y = Number(gregorianObj.year);
   const m = Number(gregorianObj.month.number);
@@ -69,11 +81,11 @@ function renderCalendar(rows, todayIndex) {
 
     const sehri = document.createElement('td');
     sehri.className = 'sehri-cell';
-    sehri.textContent = item.sehri;
+    sehri.textContent = format12Hour(item.sehri);
 
     const iftar = document.createElement('td');
     iftar.className = 'iftar-cell';
-    iftar.textContent = item.iftar;
+    iftar.textContent = format12Hour(item.iftar);
 
     tr.append(roza, date, sehri, iftar);
     calendarBody.appendChild(tr);
@@ -205,8 +217,8 @@ function updateTodayDisplay() {
     return;
   }
 
-  sehriTimeEl.textContent = todayEvent.sehri;
-  iftarTimeEl.textContent = todayEvent.iftar;
+  sehriTimeEl.textContent = format12Hour(todayEvent.sehri);
+  iftarTimeEl.textContent = format12Hour(todayEvent.iftar);
 }
 
 function updateCountdowns() {
