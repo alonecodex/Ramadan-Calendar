@@ -88,15 +88,10 @@ function monthOffset(year, month, offset) {
 async function getMonthData(lat, lon, year, month) {
   const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lon}&method=2`;
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error('Failed to fetch prayer timings.');
-  }
+  if (!res.ok) throw new Error('Failed to fetch prayer timings.');
 
   const json = await res.json();
-  if (!json.data || !Array.isArray(json.data)) {
-    throw new Error('Invalid timings response.');
-  }
-
+  if (!json.data || !Array.isArray(json.data)) throw new Error('Invalid timings response.');
   return json.data;
 }
 
@@ -117,13 +112,35 @@ async function getNearbyMonthsData(lat, lon) {
   return [...prevData, ...currentData, ...nextData];
 }
 
+async function getTodayData(lat, lon) {
+  const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=2`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch today timings.');
+
+  const json = await res.json();
+  if (!json.data || !json.data.date || !json.data.date.hijri) {
+    throw new Error('Invalid today timings response.');
+  }
+
+  return json.data;
+}
+
+async function getRamadanHijriData(lat, lon, hijriYear) {
+  const url = `https://api.aladhan.com/v1/hijriCalendar/${hijriYear}/9?latitude=${lat}&longitude=${lon}&method=2`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch Ramadan month data.');
+
+  const json = await res.json();
+  if (!json.data || !Array.isArray(json.data)) throw new Error('Invalid Ramadan month response.');
+  return json.data;
+}
+
 function buildDailyEvents(allData) {
   return allData
     .map((d) => {
       const baseDate = toDateFromApiGregorian(d.date.gregorian);
       const sehri = stripTimezoneText(d.timings.Imsak);
       const iftar = stripTimezoneText(d.timings.Maghrib);
-
       return {
         baseDate,
         sehri,
@@ -135,17 +152,19 @@ function buildDailyEvents(allData) {
     .sort((a, b) => a.baseDate - b.baseDate);
 }
 
-function buildRamadanRows(allData) {
-  const rows = [];
-  let todayRamadanIndex = -1;
+function buildRamadanRows(ramadanData) {
   const now = new Date();
+  let todayRamadanIndex = -1;
 
-  allData.forEach((d) => {
-    if (d.date.hijri.month.en !== 'Ramadan') return;
+  const dayMap = new Map();
+  ramadanData.forEach((d) => {
+    const hijriMonthNum = Number(d.date.hijri.month.number);
+    const hijriDay = Number(d.date.hijri.day);
+    if (hijriMonthNum !== 9 || Number.isNaN(hijriDay)) return;
 
     const baseDate = toDateFromApiGregorian(d.date.gregorian);
-    rows.push({
-      roza: d.date.hijri.day,
+    dayMap.set(hijriDay, {
+      roza: String(hijriDay),
       date: `${pad(baseDate.getDate())}-${baseDate.toLocaleString('en-US', { month: 'short' })}-${baseDate.getFullYear()}`,
       sehri: stripTimezoneText(d.timings.Imsak),
       iftar: stripTimezoneText(d.timings.Maghrib),
@@ -153,8 +172,24 @@ function buildRamadanRows(allData) {
     });
   });
 
+  const rows = [];
+  for (let day = 1; day <= 30; day += 1) {
+    const found = dayMap.get(day);
+    if (found) {
+      rows.push(found);
+    } else {
+      rows.push({
+        roza: String(day),
+        date: '--',
+        sehri: '--:--',
+        iftar: '--:--',
+        baseDate: null
+      });
+    }
+  }
+
   rows.forEach((row, idx) => {
-    if (isSameDay(row.baseDate, now)) todayRamadanIndex = idx;
+    if (row.baseDate && isSameDay(row.baseDate, now)) todayRamadanIndex = idx;
   });
 
   return { rows, todayRamadanIndex };
@@ -195,23 +230,29 @@ async function loadCalendarForCoordinates(lat, lon, locationName) {
     statusText.textContent = 'Loading Ramadan timings...';
     currentLocationName = locationName;
 
-    const allData = await getNearbyMonthsData(lat, lon);
+    const [allData, todayData] = await Promise.all([
+      getNearbyMonthsData(lat, lon),
+      getTodayData(lat, lon)
+    ]);
+
     dailyEventEntries = buildDailyEvents(allData);
-
-    const { rows, todayRamadanIndex } = buildRamadanRows(allData);
-
     updateTodayDisplay();
     updateCountdowns();
 
-    calendarTitle.textContent = `Ramadan Calendar - ${currentLocationName}`;
+    const hijriYear = Number(todayData.date.hijri.year);
+    let ramadanData = [];
 
-    if (!rows.length) {
-      clearCalendar();
-      statusText.textContent = 'No Ramadan dates found in nearby months for this location.';
-    } else {
-      renderCalendar(rows, todayRamadanIndex);
-      statusText.textContent = 'Timings loaded successfully.';
+    try {
+      ramadanData = await getRamadanHijriData(lat, lon, hijriYear);
+    } catch {
+      ramadanData = allData.filter((d) => Number(d.date.hijri.month.number) === 9);
     }
+
+    const { rows, todayRamadanIndex } = buildRamadanRows(ramadanData);
+
+    calendarTitle.textContent = `Ramadan Calendar - ${currentLocationName}`;
+    renderCalendar(rows, todayRamadanIndex);
+    statusText.textContent = 'Timings loaded successfully.';
 
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(updateCountdowns, 1000);
@@ -285,4 +326,3 @@ searchForm.addEventListener('submit', async (e) => {
 
 locationLabel.textContent = 'Location: Karachi, Pakistan';
 loadCalendarForCoordinates(24.8607, 67.0011, 'Karachi, Pakistan');
-
