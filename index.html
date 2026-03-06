@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ramadan Calendar</title>
+  <meta name="theme-color" content="#1b3a2f">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,6 +18,7 @@
       <p class="bismillah">Bismillah</p>
       <h1>Ramadan Kareem</h1>
       <p class="subtitle">Sehri & Iftar Timings with Live Countdown</p>
+
       <div class="location-row">
         <button id="gpsBtn" type="button">Use My GPS Location</button>
         <form id="searchForm" class="search-form">
@@ -22,8 +26,62 @@
           <button type="submit">Search</button>
         </form>
       </div>
+
+      <div class="settings-grid">
+        <label>
+          Calculation Method
+          <select id="methodSelect">
+            <option value="1">Karachi (Sunni)</option>
+            <option value="2">ISNA</option>
+            <option value="3">MWL</option>
+            <option value="4">Umm al-Qura</option>
+            <option value="5">Egypt</option>
+          </select>
+        </label>
+        <label>
+          Madhab (Asr)
+          <select id="schoolSelect">
+            <option value="1">Hanafi</option>
+            <option value="0">Shafi</option>
+          </select>
+        </label>
+        <label>
+          Date View
+          <select id="dateModeSelect">
+            <option value="both">Hijri + Gregorian</option>
+            <option value="greg">Gregorian only</option>
+            <option value="hijri">Hijri only</option>
+          </select>
+        </label>
+        <button id="reloadBtn" type="button">Apply Settings</button>
+      </div>
+
+      <div class="action-row">
+        <button id="addFavBtn" type="button">Add To Favorites</button>
+        <button id="exportCsvBtn" type="button">Download CSV</button>
+        <button id="printBtn" type="button">Print / Save PDF</button>
+        <button id="notifyBtn" type="button">Enable Alerts</button>
+        <button id="installBtn" type="button" class="hidden">Install App</button>
+      </div>
+
       <p id="locationLabel" class="location-label">Location: Not selected</p>
+      <p id="timezoneLabel" class="timezone-label">Timezone: --</p>
       <p id="statusText" class="status">Select location to load Ramadan timings.</p>
+
+      <div class="favorites-wrap">
+        <h3>Favorite Cities</h3>
+        <div id="favoritesList" class="favorites-list"></div>
+      </div>
+    </section>
+
+    <section class="progress card">
+      <div class="progress-head">
+        <h2 id="progressText">Ramadan Progress</h2>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
     </section>
 
     <section class="countdowns card">
@@ -37,6 +95,36 @@
         <p id="iftarTime" class="time">--:--</p>
         <p id="iftarCountdown" class="countdown">--:--:--</p>
       </div>
+      <div class="countdown-block next-prayer">
+        <h2>Next Prayer</h2>
+        <p id="nextPrayerName" class="time">--</p>
+        <p id="nextPrayerTime" class="countdown">--:--</p>
+        <p id="nextPrayerCountdown" class="countdown">--:--:--</p>
+      </div>
+    </section>
+
+    <section class="widgets card-grid">
+      <article class="card dua-card">
+        <h2>Daily Reminder</h2>
+        <p id="duaText">--</p>
+      </article>
+
+      <article class="card zakat-card">
+        <h2>Fitrana / Zakat Calculator</h2>
+        <div class="zakat-form">
+          <label>Household members <input id="membersInput" type="number" min="1" value="1"></label>
+          <label>Fitrana per person <input id="fitranaInput" type="number" min="0" value="320"></label>
+          <label>Zakatable amount <input id="zakatAmountInput" type="number" min="0" value="0"></label>
+        </div>
+        <p id="fitranaResult">Total Fitrana: 320</p>
+        <p id="zakatResult">Estimated Zakat (2.5%): 0</p>
+      </article>
+
+      <article class="card mosque-card">
+        <h2>Nearest Mosques</h2>
+        <button id="findMosquesBtn" type="button">Find Nearby Mosques</button>
+        <ul id="mosqueList" class="mosque-list"></ul>
+      </article>
     </section>
 
     <section class="calendar card">
