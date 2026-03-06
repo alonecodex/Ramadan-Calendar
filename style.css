@@ -1,11 +1,23 @@
-body { font-family: "Noto Nastaliq Urdu", serif; background: #fdf6e3; color: #333; padding: 20px; }
-h1 { text-align: center; color: #d35400; }
-.lang-switch { text-align: center; margin: 10px 0; }
-.lang-switch button { padding: 5px 10px; margin: 0 5px; cursor: pointer; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-th { background: #f39c12; color: white; }
-.today { background: #d35400; color: white; font-weight: bold; }
-.dua { font-size: 0.9em; color: #555; }
-.checked { background: #27ae60; color: white; }
-@media(max-width:600px){ table, th, td { font-size: 12px; padding: 5px; } }
+body {
+  font-family: "Noto Nastaliq Urdu", serif;
+  background: linear-gradient(to bottom, #fdf6e3, #fce5cd);
+  color: #333;
+  margin: 0;
+  padding: 20px;
+}
+h1 { text-align:center; color:#d35400; margin-bottom:20px; }
+.day-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+  padding: 15px;
+  transition: transform 0.2s;
+}
+.day-card:hover { transform: translateY(-2px); }
+.date-header { display:flex; justify-content: space-between; font-weight:bold; color:#d35400; margin-bottom:10px; }
+.time-info div { margin-bottom:5px; }
+.tracker input[type="checkbox"] { margin-right: 5px; }
+.today { border: 2px solid #d35400; }
+.checked { background:#27ae60; color:white; }
+@media(max-width:600px){ .day-card { padding:10px; } }
