@@ -1,46 +1,33 @@
-let currentLang = 'ur';
-
-function setLang(lang){
-  currentLang = lang;
-  renderCalendar();
+function toggleCheck(cb){
+  cb.closest('.day-card').classList.toggle('checked', cb.checked);
 }
 
+// Dynamic render from data.js
 function renderCalendar(){
+  const container = document.getElementById("calendar-container");
+  container.innerHTML = "";
   const userTime = new Date();
-  const table = document.getElementById("calendar");
-  table.innerHTML = `
-  <tr>
-    <th>${currentLang==='ur'?'دن':'Day'}</th>
-    <th>${currentLang==='ur'?'تاریخ (ہجری)':'Hijri Date'}</th>
-    <th>${currentLang==='ur'?'تاریخ (گریگورین)':'Gregorian Date'}</th>
-    <th>${currentLang==='ur'?'سحر':'Sehri'}</th>
-    <th>${currentLang==='ur'?'افطار':'Iftar'}</th>
-    <th>${currentLang==='ur'?'دعا':'Dua'}</th>
-    <th>${currentLang==='ur'?'روزہ ٹریکر':'Fasting Tracker'}</th>
-  </tr>`;
 
-  calendarData.forEach(d=>{
-    const tr = document.createElement("tr");
-    if(userTime.toDateString() === new Date(d.greg).toDateString()) tr.classList.add("today");
+  calendarData.forEach(day=>{
+    const card = document.createElement('div');
+    card.className = "day-card";
+    if(userTime.toDateString() === new Date(day.greg).toDateString()) card.classList.add("today");
 
-    tr.innerHTML = `
-      <td>${d.day}</td>
-      <td>${d.hijri}</td>
-      <td>${d.greg}</td>
-      <td>${d.sehri}</td>
-      <td>${d.iftar}</td>
-      <td class="dua">${d.dua}</td>
-      <td><input type="checkbox" onchange="toggleCheck(this)"></td>
+    card.innerHTML = `
+      <div class="date-header">
+        <span class="hijri-date">${day.hijri}</span>
+        <span class="greg-date">${day.greg}</span>
+      </div>
+      <div class="time-info">
+        <div>سحر: <span class="sehri">${day.sehri}</span></div>
+        <div>افطار: <span class="iftar">${day.iftar}</span></div>
+      </div>
+      <div class="dua">${day.dua}</div>
+      <div class="tracker">
+        <label><input type="checkbox" onchange="toggleCheck(this)"> روزہ مکمل</label>
+      </div>
     `;
-    table.appendChild(tr);
+    container.appendChild(card);
   });
 }
-
-// Fasting Tracker
-function toggleCheck(checkbox){
-  if(checkbox.checked) checkbox.parentElement.classList.add('checked');
-  else checkbox.parentElement.classList.remove('checked');
-}
-
-// Initial render
 renderCalendar();
