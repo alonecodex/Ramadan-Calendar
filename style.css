@@ -1,0 +1,11 @@
+body { font-family: "Noto Nastaliq Urdu", serif; background: #fdf6e3; color: #333; padding: 20px; }
+h1 { text-align: center; color: #d35400; }
+.lang-switch { text-align: center; margin: 10px 0; }
+.lang-switch button { padding: 5px 10px; margin: 0 5px; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+th { background: #f39c12; color: white; }
+.today { background: #d35400; color: white; font-weight: bold; }
+.dua { font-size: 0.9em; color: #555; }
+.checked { background: #27ae60; color: white; }
+@media(max-width:600px){ table, th, td { font-size: 12px; padding: 5px; } }
