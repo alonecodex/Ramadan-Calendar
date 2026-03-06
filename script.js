@@ -12,7 +12,7 @@ const calendarTitle = document.getElementById('calendarTitle');
 
 let countdownTimer = null;
 let currentLocationName = '';
-let eventEntries = [];
+let dailyEventEntries = [];
 
 function pad(num) {
   return String(num).padStart(2, '0');
@@ -39,15 +39,7 @@ function toDateFromApiGregorian(gregorianObj) {
 
 function timeOnDate(dateObj, hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
-  return new Date(
-    dateObj.getFullYear(),
-    dateObj.getMonth(),
-    dateObj.getDate(),
-    h,
-    m,
-    0,
-    0
-  );
+  return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), h, m, 0, 0);
 }
 
 function isSameDay(a, b) {
@@ -88,12 +80,13 @@ function renderCalendar(rows, todayIndex) {
   });
 }
 
-async function getRamadanMonthData(lat, lon) {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-  const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lon}&method=2`;
+function monthOffset(year, month, offset) {
+  const d = new Date(year, month - 1 + offset, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
 
+async function getMonthData(lat, lon, year, month) {
+  const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lon}&method=2`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error('Failed to fetch prayer timings.');
@@ -107,47 +100,69 @@ async function getRamadanMonthData(lat, lon) {
   return json.data;
 }
 
-function buildRamadanRowsAndEvents(data) {
+async function getNearbyMonthsData(lat, lon) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+
+  const prev = monthOffset(y, m, -1);
+  const next = monthOffset(y, m, 1);
+
+  const [prevData, currentData, nextData] = await Promise.all([
+    getMonthData(lat, lon, prev.year, prev.month),
+    getMonthData(lat, lon, y, m),
+    getMonthData(lat, lon, next.year, next.month)
+  ]);
+
+  return [...prevData, ...currentData, ...nextData];
+}
+
+function buildDailyEvents(allData) {
+  return allData
+    .map((d) => {
+      const baseDate = toDateFromApiGregorian(d.date.gregorian);
+      const sehri = stripTimezoneText(d.timings.Imsak);
+      const iftar = stripTimezoneText(d.timings.Maghrib);
+
+      return {
+        baseDate,
+        sehri,
+        iftar,
+        sehriDateTime: timeOnDate(baseDate, sehri),
+        iftarDateTime: timeOnDate(baseDate, iftar)
+      };
+    })
+    .sort((a, b) => a.baseDate - b.baseDate);
+}
+
+function buildRamadanRows(allData) {
   const rows = [];
-  const events = [];
   let todayRamadanIndex = -1;
   const now = new Date();
 
-  data.forEach((d) => {
-    const hijriMonth = d.date.hijri.month.en;
-    if (hijriMonth !== 'Ramadan') return;
+  allData.forEach((d) => {
+    if (d.date.hijri.month.en !== 'Ramadan') return;
 
     const baseDate = toDateFromApiGregorian(d.date.gregorian);
-    const sehri = stripTimezoneText(d.timings.Imsak);
-    const iftar = stripTimezoneText(d.timings.Maghrib);
-
     rows.push({
       roza: d.date.hijri.day,
       date: `${pad(baseDate.getDate())}-${baseDate.toLocaleString('en-US', { month: 'short' })}-${baseDate.getFullYear()}`,
-      sehri,
-      iftar,
+      sehri: stripTimezoneText(d.timings.Imsak),
+      iftar: stripTimezoneText(d.timings.Maghrib),
       baseDate
     });
-
-    events.push({
-      baseDate,
-      sehri,
-      iftar,
-      sehriDateTime: timeOnDate(baseDate, sehri),
-      iftarDateTime: timeOnDate(baseDate, iftar)
-    });
   });
 
-  rows.forEach((row, index) => {
-    if (isSameDay(row.baseDate, now)) todayRamadanIndex = index;
+  rows.forEach((row, idx) => {
+    if (isSameDay(row.baseDate, now)) todayRamadanIndex = idx;
   });
 
-  return { rows, events, todayRamadanIndex };
+  return { rows, todayRamadanIndex };
 }
 
 function updateTodayDisplay() {
   const now = new Date();
-  const todayEvent = eventEntries.find((e) => isSameDay(e.baseDate, now));
+  const todayEvent = dailyEventEntries.find((e) => isSameDay(e.baseDate, now));
 
   if (!todayEvent) {
     sehriTimeEl.textContent = '--:--';
@@ -160,20 +175,19 @@ function updateTodayDisplay() {
 }
 
 function updateCountdowns() {
-  if (!eventEntries.length) return;
+  if (!dailyEventEntries.length) return;
 
   const now = new Date();
-
-  const nextSehri = eventEntries.find((e) => e.sehriDateTime > now);
-  const nextIftar = eventEntries.find((e) => e.iftarDateTime > now);
+  const nextSehri = dailyEventEntries.find((e) => e.sehriDateTime > now);
+  const nextIftar = dailyEventEntries.find((e) => e.iftarDateTime > now);
 
   sehriCountdownEl.textContent = nextSehri
     ? `in ${formatDiff(nextSehri.sehriDateTime - now)}`
-    : 'Passed for listed days';
+    : 'Not available';
 
   iftarCountdownEl.textContent = nextIftar
     ? `in ${formatDiff(nextIftar.iftarDateTime - now)}`
-    : 'Passed for listed days';
+    : 'Not available';
 }
 
 async function loadCalendarForCoordinates(lat, lon, locationName) {
@@ -181,24 +195,23 @@ async function loadCalendarForCoordinates(lat, lon, locationName) {
     statusText.textContent = 'Loading Ramadan timings...';
     currentLocationName = locationName;
 
-    const data = await getRamadanMonthData(lat, lon);
-    const { rows, events, todayRamadanIndex } = buildRamadanRowsAndEvents(data);
-    eventEntries = events;
+    const allData = await getNearbyMonthsData(lat, lon);
+    dailyEventEntries = buildDailyEvents(allData);
+
+    const { rows, todayRamadanIndex } = buildRamadanRows(allData);
+
     updateTodayDisplay();
+    updateCountdowns();
 
     calendarTitle.textContent = `Ramadan Calendar - ${currentLocationName}`;
 
     if (!rows.length) {
       clearCalendar();
-      sehriCountdownEl.textContent = 'Not available';
-      iftarCountdownEl.textContent = 'Not available';
-      statusText.textContent = 'No Ramadan dates found in current month for this location.';
-      return;
+      statusText.textContent = 'No Ramadan dates found in nearby months for this location.';
+    } else {
+      renderCalendar(rows, todayRamadanIndex);
+      statusText.textContent = 'Timings loaded successfully.';
     }
-
-    renderCalendar(rows, todayRamadanIndex);
-    updateCountdowns();
-    statusText.textContent = 'Timings loaded successfully.';
 
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(updateCountdowns, 1000);
@@ -269,3 +282,7 @@ searchForm.addEventListener('submit', async (e) => {
     statusText.textContent = err.message;
   }
 });
+
+locationLabel.textContent = 'Location: Karachi, Pakistan';
+loadCalendarForCoordinates(24.8607, 67.0011, 'Karachi, Pakistan');
+
