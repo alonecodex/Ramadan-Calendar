@@ -1,19 +1,41 @@
-<div class="day-card today">
-  <div class="date-header">
-    <span class="hijri-date">1 رمضان</span>
-    <span class="greg-date">11 Mar 2026</span>
-  </div>
-  <div class="time-info">
-    <div>سحر: <span class="sehri">05:00</span></div>
-    <div>افطار: <span class="iftar">18:30</span></div>
-  </div>
-  <div class="dua">
-    اللَّهُمَّ اجعل صيامنا صيام الصالحين
-  </div>
-  <div class="tracker">
-    <label>
-      <input type="checkbox" onchange="toggleCheck(this)">
-      روزہ مکمل
-    </label>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ramadan Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header>
+      <h1>🌙 Ramadan Calendar</h1>
+      <p class="subtitle">Auto-location, 30-day Sehri/Iftar schedule, duas, countdown, and share support.</p>
+    </header>
+
+    <section class="control-panel">
+      <div class="location-row">
+        <button id="use-gps-btn" class="btn">📍 Use GPS Location</button>
+        <button id="refresh-btn" class="btn secondary">🔄 Refresh Calendar</button>
+      </div>
+      <p id="location-status" class="status">Location not detected yet. Tap “Use GPS Location”.</p>
+
+      <label for="search-input" class="search-label">Search by day/date/dua:</label>
+      <input id="search-input" type="text" placeholder="e.g. 10 Ramadan, Mar 12, forgiveness" />
+    </section>
+
+    <section class="summary" id="today-summary">
+      <h2>Today Countdown</h2>
+      <p id="countdown-text">Load calendar to see Sehri/Iftar countdown.</p>
+    </section>
+
+    <section id="calendar-container" class="calendar-grid" aria-live="polite"></section>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
