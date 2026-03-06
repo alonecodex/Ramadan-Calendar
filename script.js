@@ -86,7 +86,7 @@ function monthOffset(year, month, offset) {
 }
 
 async function getMonthData(lat, lon, year, month) {
-  const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lon}&method=2`;
+  const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lon}&method=1&school=1`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch prayer timings.');
 
@@ -113,7 +113,7 @@ async function getNearbyMonthsData(lat, lon) {
 }
 
 async function getTodayData(lat, lon) {
-  const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=2`;
+  const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=1&school=1`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch today timings.');
 
@@ -126,7 +126,7 @@ async function getTodayData(lat, lon) {
 }
 
 async function getRamadanHijriData(lat, lon, hijriYear) {
-  const url = `https://api.aladhan.com/v1/hijriCalendar/${hijriYear}/9?latitude=${lat}&longitude=${lon}&method=2`;
+  const url = `https://api.aladhan.com/v1/hijriCalendar/${hijriYear}/9?latitude=${lat}&longitude=${lon}&method=1&school=1`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch Ramadan month data.');
 
