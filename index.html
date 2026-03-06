@@ -1,33 +1,19 @@
-<!DOCTYPE html>
-<html lang="ur">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رمضان کیلنڈر 2026</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<h1>رمضان کیلنڈر 2026</h1>
-
-<div class="lang-switch">
-  <button onclick="setLang('ur')">اردو</button>
-  <button onclick="setLang('en')">English</button>
+<div class="day-card today">
+  <div class="date-header">
+    <span class="hijri-date">1 رمضان</span>
+    <span class="greg-date">11 Mar 2026</span>
+  </div>
+  <div class="time-info">
+    <div>سحر: <span class="sehri">05:00</span></div>
+    <div>افطار: <span class="iftar">18:30</span></div>
+  </div>
+  <div class="dua">
+    اللَّهُمَّ اجعل صيامنا صيام الصالحين
+  </div>
+  <div class="tracker">
+    <label>
+      <input type="checkbox" onchange="toggleCheck(this)">
+      روزہ مکمل
+    </label>
+  </div>
 </div>
-
-<table id="calendar">
-  <tr>
-    <th>دن</th>
-    <th>تاریخ (ہجری)</th>
-    <th>تاریخ (گریگورین)</th>
-    <th>سحر</th>
-    <th>افطار</th>
-    <th>دعا</th>
-    <th>روزہ ٹریکر</th>
-  </tr>
-</table>
-
-<script src="data.js"></script>
-<script src="script.js"></script>
-</body>
-</html>
