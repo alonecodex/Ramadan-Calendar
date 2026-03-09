@@ -16,7 +16,6 @@ const calendarBody = document.getElementById('calendarBody');
 const calendarTitle = document.getElementById('calendarTitle');
 const methodSelect = document.getElementById('methodSelect');
 const schoolSelect = document.getElementById('schoolSelect');
-const dateModeSelect = document.getElementById('dateModeSelect');
 const reloadBtn = document.getElementById('reloadBtn');
 const addFavBtn = document.getElementById('addFavBtn');
 const favoritesList = document.getElementById('favoritesList');
@@ -53,7 +52,7 @@ let notifyTimer = null;
 let dailyEventEntries = [];
 let ramadanRows = [];
 let currentLocation = { label: 'Karachi, Pakistan', lat: 24.8607, lon: 67.0011 };
-let currentSettings = { method: '1', school: '1', dateMode: 'greg' };
+let currentSettings = { method: '1', school: '1' };
 let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let deferredInstallPrompt = null;
 let notifiedMap = {};
@@ -168,15 +167,13 @@ function loadSettings() {
     currentSettings = {
       method: parsed.method || '1',
       school: parsed.school || '1',
-      dateMode: (parsed.dateMode === 'hijri' || parsed.dateMode === 'greg') ? parsed.dateMode : 'greg'
     };
   } catch {
-    currentSettings = { method: '1', school: '1', dateMode: 'greg' };
+    currentSettings = { method: '1', school: '1' };
   }
 
   methodSelect.value = currentSettings.method;
   schoolSelect.value = currentSettings.school;
-  dateModeSelect.value = currentSettings.dateMode;
 }
 
 function saveLastLocation() {
@@ -308,7 +305,6 @@ function clearCalendar() {
 }
 
 function getDateLabel(row) {
-  if (currentSettings.dateMode === 'hijri') return row.hijriDate;
   return row.gregDate;
 }
 function renderCalendar(rows, todayIndex) {
@@ -741,15 +737,8 @@ function setupInstallPrompt() {
 reloadBtn.addEventListener('click', () => {
   currentSettings.method = methodSelect.value;
   currentSettings.school = schoolSelect.value;
-  currentSettings.dateMode = dateModeSelect.value;
   saveSettings();
   loadCalendarForCoordinates(currentLocation.lat, currentLocation.lon, currentLocation.label);
-});
-
-dateModeSelect.addEventListener('change', () => {
-  currentSettings.dateMode = dateModeSelect.value;
-  saveSettings();
-  renderCalendar(ramadanRows, ramadanRows.findIndex((r) => r.baseDate && isSameDay(r.baseDate, new Date())));
 });
 
 gpsBtn.addEventListener('click', () => {
@@ -872,6 +861,11 @@ function init() {
 }
 
 init();
+
+
+
+
+
 
 
 

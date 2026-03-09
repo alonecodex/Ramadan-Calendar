@@ -90,7 +90,7 @@ button {
 }
 
 .search-autocomplete input {
-  width: min(420px, 62vw);
+  width: min(300px, 52vw);
 }
 
 .suggestions {
@@ -137,7 +137,7 @@ button {
 }
 
 .search-form input {
-  width: min(420px, 62vw);
+  width: min(300px, 52vw);
 }
 input, select {
   min-width: 150px;
@@ -237,6 +237,7 @@ tr.today { background: rgba(93, 211, 158, 0.14); }
   .search-form { width: 100%; justify-content: center; }
   input { min-width: 140px; width: 60%; }
 }
+
 
 
 
