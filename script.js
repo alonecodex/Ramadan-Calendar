@@ -705,14 +705,43 @@ async function loadCalendarForCoordinates(lat, lon, locationName) {
   }
 }
 
-function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {
-      statusText.textContent = 'Offline mode setup failed.';
-    });
+function setGpsLoading(isLoading) {
+  if (isLoading) {
+    gpsBtn.classList.add('locating');
+    gpsBtn.disabled = true;
+  } else {
+    gpsBtn.classList.remove('locating');
+    gpsBtn.disabled = false;
   }
 }
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
 
+  navigator.serviceWorker.register('sw.js').then((registration) => {
+    registration.update();
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          newWorker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }).catch(() => {
+    statusText.textContent = 'Offline mode setup failed.';
+  });
+}
 function setupInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -748,16 +777,20 @@ gpsBtn.addEventListener('click', () => {
   }
 
   statusText.textContent = 'Getting your location...';
+  setGpsLoading(true);
   navigator.geolocation.getCurrentPosition(async (position) => {
     try {
       const { latitude, longitude } = position.coords;
       const locName = await reverseGeocode(latitude, longitude);
-      loadCalendarForCoordinates(latitude, longitude, locName);
+      await loadCalendarForCoordinates(latitude, longitude, locName);
     } catch {
       statusText.textContent = 'Failed to process GPS location.';
+    } finally {
+      setGpsLoading(false);
     }
   }, () => {
     statusText.textContent = 'Unable to access GPS location.';
+    setGpsLoading(false);
   }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 });
 
@@ -861,6 +894,8 @@ function init() {
 }
 
 init();
+
+
 
 
 
