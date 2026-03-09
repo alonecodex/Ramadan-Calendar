@@ -725,7 +725,13 @@ cityInput.addEventListener('input', () => {
   clearTimeout(suggestionTimer);
   suggestionTimer = setTimeout(() => {
     fetchCitySuggestions(cityInput.value.trim());
-  }, 250);
+  }, 180);
+});
+
+cityInput.addEventListener('focus', () => {
+  if (cityInput.value.trim().length >= 2) {
+    fetchCitySuggestions(cityInput.value.trim());
+  }
 });
 
 searchForm.addEventListener('submit', async (e) => {
@@ -781,6 +787,9 @@ function init() {
 }
 
 init();
+
+
+
 
 
 

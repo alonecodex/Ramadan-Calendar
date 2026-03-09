@@ -84,6 +84,18 @@ button {
 .hidden { display: none; }
 
 .search-form { display: flex; gap: 8px; }
+.gps-icon-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-form input {
+  width: min(420px, 62vw);
+}
 input, select {
   min-width: 150px;
   background: rgba(255, 255, 255, 0.92);
@@ -182,3 +194,4 @@ tr.today { background: rgba(93, 211, 158, 0.14); }
   .search-form { width: 100%; justify-content: center; }
   input { min-width: 140px; width: 60%; }
 }
+

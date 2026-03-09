@@ -17,12 +17,16 @@
     <section class="hero card">
 
       <div class="location-row">
-        <button id="gpsBtn" type="button">Use My GPS Location</button>
         <form id="searchForm" class="search-form">
           <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" list="citySuggestions" autocomplete="off" required>
           <datalist id="citySuggestions"></datalist>
           <button type="submit">Search</button>
         </form>
+        <button id="gpsBtn" class="gps-icon-btn" type="button" aria-label="Use GPS Location" title="Use GPS Location">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <path d="M12 2L5 21l7-3 7 3-7-19z" fill="currentColor"/>
+          </svg>
+        </button>
       </div>
 
       <div class="settings-grid">
@@ -140,6 +144,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
