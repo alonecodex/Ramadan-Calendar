@@ -18,8 +18,10 @@
 
       <div class="location-row">
         <form id="searchForm" class="search-form">
-          <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" list="citySuggestions" autocomplete="off" required>
-          <datalist id="citySuggestions"></datalist>
+          <div class="search-autocomplete">
+            <input id="cityInput" type="text" placeholder="Search city (e.g. Lahore)" autocomplete="off" required>
+            <div id="citySuggestions" class="suggestions hidden" role="listbox" aria-label="Location suggestions"></div>
+          </div>
           <button type="submit">Search</button>
         </form>
         <button id="gpsBtn" class="gps-icon-btn" type="button" aria-label="Use GPS Location" title="Use GPS Location">
@@ -144,6 +146,8 @@
   <script src="script.js"></script>
 </body>
 </html>
+
+
 
 
 

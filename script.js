@@ -57,6 +57,9 @@ let currentSettings = { method: '1', school: '1', dateMode: 'greg' };
 let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let deferredInstallPrompt = null;
 let notifiedMap = {};
+let suggestionItems = [];
+let suggestionTimer = null;
+let activeSuggestionIndex = -1;
 
 function pad(num) {
   return String(num).padStart(2, '0');
@@ -577,15 +580,55 @@ async function geocodeCity(cityName) {
   };
 }
 
+function hideSuggestions() {
+  citySuggestions.classList.add('hidden');
+  activeSuggestionIndex = -1;
+}
+
+function applyActiveSuggestion(index) {
+  if (index < 0 || index >= suggestionItems.length) return;
+  const item = suggestionItems[index];
+  cityInput.value = item.label;
+  hideSuggestions();
+}
+
+function setActiveSuggestion(index) {
+  const buttons = citySuggestions.querySelectorAll('.suggestion-item');
+  buttons.forEach((b) => b.classList.remove('active'));
+  if (index >= 0 && index < buttons.length) {
+    activeSuggestionIndex = index;
+    buttons[index].classList.add('active');
+  }
+}
+
 function renderCitySuggestions(items) {
   citySuggestions.innerHTML = '';
   suggestionItems = items;
+  activeSuggestionIndex = -1;
 
-  items.forEach((item) => {
-    const opt = document.createElement('option');
-    opt.value = item.label;
-    citySuggestions.appendChild(opt);
+  if (!items.length) {
+    hideSuggestions();
+    return;
+  }
+
+  items.forEach((item, index) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'suggestion-item';
+    btn.setAttribute('role', 'option');
+    btn.textContent = item.label;
+
+    btn.addEventListener('mouseenter', () => setActiveSuggestion(index));
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      cityInput.value = item.label;
+      hideSuggestions();
+    });
+
+    citySuggestions.appendChild(btn);
   });
+
+  citySuggestions.classList.remove('hidden');
 }
 
 async function fetchCitySuggestions(query) {
@@ -611,6 +654,14 @@ async function fetchCitySuggestions(query) {
 
 function getSelectedSuggestion(value) {
   const v = (value || '').trim().toLowerCase();
+
+  if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestionItems.length) {
+    const active = suggestionItems[activeSuggestionIndex];
+    if (active.label.toLowerCase().startsWith(v) || active.fullLabel.toLowerCase().includes(v)) {
+      return active;
+    }
+  }
+
   return suggestionItems.find((x) => x.label.toLowerCase() === v || x.fullLabel.toLowerCase() === v) || null;
 }
 async function loadCalendarForCoordinates(lat, lon, locationName) {
@@ -734,6 +785,39 @@ cityInput.addEventListener('focus', () => {
   }
 });
 
+cityInput.addEventListener('keydown', (e) => {
+  if (citySuggestions.classList.contains('hidden')) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = Math.min(suggestionItems.length - 1, activeSuggestionIndex + 1);
+    setActiveSuggestion(next);
+    return;
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = Math.max(0, activeSuggestionIndex - 1);
+    setActiveSuggestion(prev);
+    return;
+  }
+
+  if (e.key === 'Enter' && activeSuggestionIndex >= 0) {
+    e.preventDefault();
+    applyActiveSuggestion(activeSuggestionIndex);
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    hideSuggestions();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!searchForm.contains(e.target)) {
+    hideSuggestions();
+  }
+});
 searchForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
@@ -743,6 +827,7 @@ searchForm.addEventListener('submit', async (e) => {
     statusText.textContent = 'Searching city...';
     const selected = getSelectedSuggestion(city);
     const result = selected || await geocodeCity(city);
+    hideSuggestions();
     loadCalendarForCoordinates(result.lat, result.lon, result.label);
   } catch (err) {
     statusText.textContent = err.message;
@@ -787,6 +872,10 @@ function init() {
 }
 
 init();
+
+
+
+
 
 
 
